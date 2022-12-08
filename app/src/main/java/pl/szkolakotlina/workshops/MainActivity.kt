@@ -1,5 +1,7 @@
 package pl.szkolakotlina.workshops
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -60,7 +62,11 @@ class MainActivity : ComponentActivity() {
           modifier = Modifier.fillMaxSize(),
           color = MaterialTheme.colors.background
         ) {
-          RssFeedList()
+          RssFeedList {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.data = Uri.parse(it)
+            startActivity(i)
+          }
         }
       }
     }
@@ -88,7 +94,7 @@ private suspend fun fetchData(): List<Article> {
 }
 
 @Composable
-fun RssFeedList() {
+fun RssFeedList(openLink: (String) -> Unit) {
 
   val viewModel = remember {
     RssListViewModel()
@@ -105,14 +111,16 @@ fun RssFeedList() {
       modifier = Modifier
     ) {
       items(data) {
-        ArticleViewItem(it)
+        ArticleViewItem(it) {
+          openLink(it)
+        }
       }
     }
   }
 }
 
 @Composable
-fun ArticleViewItem(article: Article) {
+fun ArticleViewItem(article: Article, openLink: (String) -> Unit) {
 
   // Obrazek - na cała szerokość
   // Tytuł: duży tekst
@@ -121,45 +129,46 @@ fun ArticleViewItem(article: Article) {
 
   Timber.d("image: ${article.image}")
 
-  Box(
+
+  Column(
     modifier = Modifier.padding(16.dp)
   ) {
-
-    Column() {
-      Row() {
-        Box() {
-          AsyncImage(
-            model = article.image,
-            contentScale = ContentScale.Crop,
-            contentDescription = article.title,
-            modifier = Modifier
-              .height(250.dp)
-              .fillMaxWidth()
-          )
-          Text(
-            text = article.title,
-            modifier = Modifier
-              .align(Alignment.BottomCenter)
-              .background(Color.DarkGray)
-              .padding(8.dp),
-            textAlign = TextAlign.Center,
-            color = Color.White,
-            style = MaterialTheme.typography.h5
-          )
-        }
-      }
-      Row() {
-        Text(text = article.publishDate)
-      }
-      Row() {
-        TextButton(onClick = {
-          Timber.d("Clicked")
-        }) {
-          Text(text = "Przeczytaj calosc")
-        }
+    Row() {
+      Box() {
+        AsyncImage(
+          model = article.image,
+          contentScale = ContentScale.Crop,
+          contentDescription = article.title,
+          modifier = Modifier
+            .height(250.dp)
+            .fillMaxWidth()
+        )
+        Text(
+          text = article.title,
+          modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .background(Color.DarkGray)
+            .padding(8.dp),
+          textAlign = TextAlign.Center,
+          color = Color.White,
+          style = MaterialTheme.typography.h5
+        )
       }
     }
-
+    Row(
+      modifier = Modifier.padding(16.dp)
+    ) {
+      Text(text = article.publishDate)
+    }
+    Row(
+      modifier = Modifier.padding(16.dp)
+    ) {
+      TextButton(onClick = {
+        openLink(article.link)
+      }) {
+        Text(text = "Przeczytaj calosc")
+      }
+    }
   }
 
 }
@@ -168,6 +177,8 @@ fun ArticleViewItem(article: Article) {
 @Composable
 fun DefaultPreview() {
   AndroidWorkshopsTheme {
-    RssFeedList()
+    RssFeedList {
+
+    }
   }
 }
